@@ -1,27 +1,25 @@
-library(magrittr)
 library(mrgsolve)
+library(magrittr)
 
 
 
-# LET'S TALK TDM: need to know inputs and outputs
+ipred <- function(mod, eta) {
+  # "individual prediction"
+  # mutate mod with the provided etas and zero omega matrix
+  
+  # zero matrices
+  zomat <- (mod %>% omat %>% as.matrix) * 0
+  mod %<>% omat(zomat)
+  
+  # set etas
+  etalist <- as.list(eta)
+  names(etalist) <- paste('FORCEETA', seq(length(eta)), sep='')
+  mod %<>% param(etalist)
+  
+  mod
+}
 
-# INPUTS
-doses <- c(
-  ev(time=0, amt=1000),
-  ev(time=12, amt=1000)
-)
 
-# OUTPUTS (what you measured and when you measured it)
-
-# vector of times that TDM measurements were taken
-# the values of those measurements
-
-x <- c(12, 24, 36)
-y <- c(15, 20, 22)
-
-
-
-# Create some models...
 
 code <- '
 $PARAM TBW=74.8, CRCL=1, FORCEETA1=0, FORCEETA2=0
@@ -42,39 +40,63 @@ double DV = (CENT/V)*(1+EPS(1)); // observed, only fuzzes when we set sigma
 double ET1 = ETA(1);
 double ET2 = ETA(2);
 
-$CAPTURE DV ET1 ET2
+$CAPTURE DV ET1 ET2 CL
 '
 
 mod <- mcode("roberts", code)
-mod.fe <- mod %>% ev(doses) # add fixed effects in here later (they are currently not calculated from the model)
-
-omega <- omat(mod) %>% as.matrix
-sigma <- smat(mod) %>% as.matrix
 
 
-objective <- function(eta, mod, x, y) {
-  # remove omega and sigma matrices
-  mod %<>% omat(cmat(0,0,0)) %>% smat(cmat(0))
+
+# LET'S TALK TDM: need to know inputs and outputs
+
+# INPUTS
+doses <- c(
+  ev(time=0, amt=1500)
+)
+
+# OUTPUTS (what you measured and when you measured it)
+
+# vector of times that TDM measurements were taken
+# the values of those measurements
+
+t <- c(12)
+y <- c(20)
+
+
+
+mod %<>% ev(doses)
+# here I should also resolve the fixed effects of the model
+
+
+
+
+bayesian.ofv <- function(eta, mod, t, y) {
+  # simulate ipred, no RUV, at just the times we ask
+  y2 <- mod %>% ipred(eta) %>% smat(dmat(0)) %>% obsonly %>% mrgsim(end=-1, add=t)
+  y2 <- y2$DV
+
+  # extract a few bits from the model
+  sigma.num <- mod %>% smat %>% as.matrix %>% as.numeric
+  omega.mat <- mod %>% omat %>% as.matrix
+  eta.mat.horiz <- eta %>% matrix(nrow=1)
+
+  # calculate the RUV part of the objective function
+  actual.variances <- y2^2 * sigma.num # sig2j
+  sqwres <- log(actual.variances) + (y2-y)^2/actual.variances
   
-  # add our own etas instead
-  mod %<>% param(FORCEETA1=eta[1], FORCEETA2=eta[2])
-
-  # get observation records
-  y.sim <- mod %>% mrgsim(end=-1, add=x)
-  y.sim <- y.sim$DV
+  # and the ETA part of the objective function
+  # what's happening here?
+  n0n <- diag(eta.mat.horiz %*% solve(omega.mat) %*% t(eta.mat.horiz))
   
-  # now calculate an objective function (eek!)
-  eta_m <- matrix(eta, nrow=1)
-
-  # RUV component of objective function
-  sig2j <- y.sim^2 * as.numeric(sigma)
-  sqwres <- log(sig2j) + (1/sig2j) * (y.sim)^2
-
-  # ETA component of objective function
-  n0n <- diag(eta_m %*% solve(omega) %*% t(eta_m))
-  
-  # Sum them
   sum(sqwres) + n0n
 }
 
-fit <- newuoa(c(1,1), objective, mod=mod.fe, x=x, y=y)
+
+
+
+fit <- optim(c(0.1,0.1), bayesian.ofv, hessian=T, mod=mod, t=t, y=y)
+
+
+
+# okay, now to graph the bastard...
+
