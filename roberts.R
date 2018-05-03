@@ -94,7 +94,7 @@ bayesian.ofv <- function(eta, mod, t, y) {
 
 
 
-fit <- optim(c(0.1,0.1), bayesian.ofv, hessian=T, mod=mod, t=t, y=y)
+fit <- optim(c(0,0), bayesian.ofv, hessian=T, mod=mod, t=t, y=y)
 
 
 
