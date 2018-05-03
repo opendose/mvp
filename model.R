@@ -2,6 +2,16 @@ library(mrgsolve)
 library(magrittr)
 
 
+# Load somemodels. To get the fixed effects right, their respective covariates
+# *must* be param'ed in
+
+mod.vanc_roberts2011 <- mread("vanc_roberts2011")
+
+
+# Note that dosing is not mentioned below. It is the caller's responsibility.
+
+
+# Mutate a model to suit an individual's etas
 
 ipred <- function(mod, eta) {
   # "individual prediction"
@@ -20,55 +30,7 @@ ipred <- function(mod, eta) {
 }
 
 
-
-code <- '
-$PARAM TBW=74.8, CRCL=1, FORCEETA1=0, FORCEETA2=0
-
-$CMT CENT
-
-$PKMODEL ncmt=1
-
-$OMEGA 0.139876 0.151321
-$SIGMA 0.039601
-
-$MAIN
-double V = TBW * 1.53 * (1 + FORCEETA1 + ETA(1));
-double CL = CRCL * 4.58 * (1 + FORCEETA2 + ETA(2));
-
-$TABLE
-double DV = (CENT/V)*(1+EPS(1)); // observed, only fuzzes when we set sigma
-double ET1 = ETA(1);
-double ET2 = ETA(2);
-
-$CAPTURE DV ET1 ET2 CL
-'
-
-mod <- mcode("roberts", code)
-
-
-
-# LET'S TALK TDM: need to know inputs and outputs
-
-# INPUTS
-doses <- c(
-  ev(time=0, amt=1500)
-)
-
-# OUTPUTS (what you measured and when you measured it)
-
-# vector of times that TDM measurements were taken
-# the values of those measurements
-
-t <- c(12)
-y <- c(20)
-
-
-
-mod %<>% ev(doses)
-# here I should also resolve the fixed effects of the model
-
-
-
+# Objective function
 
 bayesian.ofv <- function(eta, mod, t, y) {
   # simulate ipred, no RUV, at just the times we ask
@@ -92,11 +54,27 @@ bayesian.ofv <- function(eta, mod, t, y) {
 }
 
 
+# Change the model to the population of people indistinguishable from our individual
+
+hack.mod.for.fit <- function(mod, fit)
+{
+  central.eta <- fit$par
+  varcovar.sigma <- solve(fit$hessian)
+
+  etalist <- as.list(central.eta)
+  names(etalist) <- paste('FORCEETA', seq(length(central.eta)), sep='')
+  mod %<>% param(etalist)
+  
+  mod %<>% smat(varcovar.sigma)
+}
 
 
-fit <- optim(c(0,0), bayesian.ofv, hessian=T, mod=mod, t=t, y=y)
+# Fit function, which returns my "suspected" etas and their Hessian
 
-
-
-# okay, now to graph the bastard...
-
+tdm <- function(mod, t, y)
+{
+  n.eta <- mod %>% omat %>% as.matrix %>% nrow
+  init.eta <- rep(0, n.eta)
+  
+  optim(init.eta, bayesian.ofv, hessian=T, mod=mod, t=t, y=y)
+}
