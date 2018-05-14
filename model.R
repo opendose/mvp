@@ -58,14 +58,16 @@ bayesian.ofv <- function(eta, mod, t, y) {
 
 hack.mod.for.fit <- function(mod, fit)
 {
-  central.eta <- fit$par
-  varcovar.sigma <- solve(fit$hessian)
+  # force our estimated etas on the model
+  etalist <- as.list(fit$par)
+  names(etalist) <- paste('FORCEETA', seq(length(etalist)), sep='')
 
-  etalist <- as.list(central.eta)
-  names(etalist) <- paste('FORCEETA', seq(length(central.eta)), sep='')
   mod %<>% param(etalist)
   
-  mod %<>% smat(varcovar.sigma)
+  # misuse the omega matrix 
+  matrix.describing.uncertainty.in.our.estimates.etas <- solve(fit$hessian)
+
+  mod %<>% omat(matrix.describing.uncertainty.in.our.estimates.etas)
 }
 
 
