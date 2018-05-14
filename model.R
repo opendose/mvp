@@ -5,7 +5,13 @@ library(magrittr)
 # Load somemodels. To get the fixed effects right, their respective covariates
 # *must* be param'ed in
 
+# for(filename in list.files(pattern="\\.cpp$")) {
+#   noext <- sub("\\.\\w*$", "", filename)
+#   assign(paste("mod.", noext, sep=""), mread(noext))
+# }
+
 mod.vanc_roberts2011 <- mread("vanc_roberts2011")
+mod.vanc_thomson2009 <- mread("vanc_thomson2009")
 
 
 # Note that dosing is not mentioned below. It is the caller's responsibility.

@@ -8,6 +8,8 @@ ui <- fluidPage(
   titlePanel("Bayesian vancomycin"),
   sidebarLayout(
     sidebarPanel(
+      radioButtons("modsel", "Model source", choices=c("mod.vanc_roberts2011", "mod.vanc_thomson2009")),
+      hr(),
       sliderInput("crcl", "Cockcroft-Gault est CrCL (mL/min)", 0, 200, 90),
       sliderInput("tbw", "Total body weight (kg)", 0, 200, 70),
       hr(),
@@ -26,6 +28,8 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
+  Rbasemod <- reactive(get(input$modsel))
+  
   Rdoses <- reactive(
     read.delim(text=input$doses, sep=" ", header=FALSE, col.names=c("t", "amt"))
   )
@@ -35,7 +39,7 @@ server <- function(input, output) {
   )
   
   Rprior <- reactive(
-    mod.vanc_roberts2011 %>% param(TBW=input$tbw, CRCL=input$crcl) %>% ev(do.call("ev", Rdoses()))
+    Rbasemod() %>% param(TBW=input$tbw, CRCL=input$crcl) %>% ev(do.call("ev", Rdoses()))
   )
   
   Rfit <- reactive(
@@ -46,9 +50,6 @@ server <- function(input, output) {
     Rprior() %>% hack.mod.for.fit(Rfit())
   )
   
-  output$report <- renderPrint({
-    print(Rposterior())
-  })
   output$plot <- renderPlot(plot(Rposterior() %>% mrgsim(nid=20), DV~.))
 }
 
