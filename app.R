@@ -1,5 +1,6 @@
 library(shiny)
 library(stringr)
+library(lattice)
 source("model.R")
 
 # Define UI for app that draws a histogram ----
