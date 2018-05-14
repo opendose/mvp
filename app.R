@@ -10,13 +10,13 @@ ui <- fluidPage(
     sidebarPanel(
       radioButtons("modsel", "Model source", choices=c("mod.vanc_roberts2011", "mod.vanc_thomson2009")),
       hr(),
-      sliderInput("crcl", "Cockcroft-Gault est CrCL (mL/min)", 0, 200, 90),
+      sliderInput("crcl", "Creatinine clearance (mL/min; urinary for Roberts, C-G for Thomson)", 0, 200, 90),
       sliderInput("tbw", "Total body weight (kg)", 0, 200, 70),
       hr(),
       h2("Prior"),
-      textAreaInput("doses", "Doses ('hours milligrams', one per line)", value="0 1500", rows=3),
+      textAreaInput("doses", "Doses ('hours mg', one per line)", value="0 1500", rows=3),
       h2("Posterior"),
-      textAreaInput("tdm", "Drug levels ('hours ml/L', one per line)", value="12 15", rows=3)
+      textAreaInput("tdm", "Drug levels ('hours mg/L', one per line)", value="12 15", rows=3)
     ),
     mainPanel(
       h2("output"),
