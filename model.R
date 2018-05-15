@@ -60,6 +60,15 @@ bayesian.ofv <- function(eta, mod, t, y) {
 }
 
 
+remove.mod.uncertainty <- function(mod) {
+  zeromat <- mod %>% omat %>% as.matrix * 0
+  mod %<>% omat(zeromat)
+  
+  zeromat <- mod %>% smat %>% as.matrix * 0
+  mod %<>% smat(zeromat)
+}
+
+
 # Change the model to the population of people indistinguishable from our individual
 
 hack.mod.for.fit <- function(mod, fit)

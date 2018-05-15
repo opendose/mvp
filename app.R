@@ -1,6 +1,7 @@
 library(shiny)
 library(stringr)
 library(lattice)
+library(ggplot2)
 source("model.R")
 
 # Define UI for app that draws a histogram ----
@@ -10,12 +11,12 @@ ui <- fluidPage(
     sidebarPanel(
       radioButtons("modsel", "Model source", choices=c("mod.vanc_roberts2011", "mod.vanc_thomson2009")),
       hr(),
-      sliderInput("crcl", "Creatinine clearance (mL/min; urinary for Roberts, C-G for Thomson)", 0, 200, 90),
-      sliderInput("tbw", "Total body weight (kg)", 0, 200, 70),
+      numericInput("crcl", "Creatinine clearance (mL/min; urinary for Roberts, C-G for Thomson)", 90, 0, 200),
+      numericInput("tbw", "Total body weight (kg)", 70, 0, 200),
       hr(),
-      h2("Prior"),
+      h2("Prior (blue)"),
       textAreaInput("doses", "Doses ('hours mg', one per line)", value="0 1500", rows=3),
-      h2("Posterior"),
+      h2("Posterior (red)"),
       textAreaInput("tdm", "Drug levels ('hours mg/L', one per line)", value="12 15", rows=3)
     ),
     mainPanel(
@@ -50,7 +51,12 @@ server <- function(input, output) {
     Rprior() %>% hack.mod.for.fit(Rfit())
   )
   
-  output$plot <- renderPlot(plot(Rposterior() %>% mrgsim(nid=20), DV~.))
+  output$plot <- renderPlot(
+    ggplot() +
+      geom_line(data=Rprior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
+      geom_line(data=Rposterior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
+      geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
+  )
 }
 
 
