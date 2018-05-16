@@ -29,6 +29,10 @@ ui <- fluidPage(
 )
 
 
+# Constants
+simduration <- 48
+
+
 server <- function(input, output) {
   Rbasemod <- reactive(get(input$modsel))
   
@@ -54,8 +58,8 @@ server <- function(input, output) {
   
   output$plot <- renderPlot(
     ggplot() +
-      geom_line(data=Rprior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
-      geom_line(data=Rposterior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
+      geom_line(data=Rprior() %>% remove.mod.uncertainty %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
+      geom_line(data=Rposterior() %>% remove.mod.uncertainty %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
       geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
   )
 }
