@@ -2,6 +2,7 @@ library(shiny)
 library(stringr)
 library(lattice)
 library(ggplot2)
+library(dplyr)
 source("model.R")
 
 # Define UI for app that draws a histogram ----
@@ -32,7 +33,7 @@ server <- function(input, output) {
   Rbasemod <- reactive(get(input$modsel))
   
   Rdoses <- reactive(
-    read.delim(text=input$doses, sep=" ", header=FALSE, col.names=c("t", "amt"))
+    read.delim(text=input$doses, sep=" ", header=FALSE, col.names=c("t", "amt")) %>% mutate(rate=600)
   )
 
   Rtdm <- reactive(
