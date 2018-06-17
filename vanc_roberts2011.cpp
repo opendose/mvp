@@ -16,4 +16,4 @@ double DV = (CENT/V)*(1+EPS(1)); // observed, only fuzzes when we set sigma
 double ET1 = ETA(1);
 double ET2 = ETA(2);
 
-$CAPTURE DV ET1 ET2 CL
+$CAPTURE DV ET1 ET2 V CL

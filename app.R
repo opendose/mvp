@@ -22,8 +22,8 @@ ui <- fluidPage(
     ),
     mainPanel(
       h2("output"),
-      textOutput("report"),
-      plotOutput("plot")
+      plotOutput("plot"),
+      textOutput("report")
     )
   )
 )
@@ -62,6 +62,21 @@ server <- function(input, output) {
       geom_line(data=Rposterior() %>% remove.mod.uncertainty %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
       geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
   )
+  
+  output$report <- renderPrint({
+    mypost <- Rposterior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame %>% head(1)
+    myprior <- Rprior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame %>% head(1)
+    
+    allcols <- colnames(mypost)
+    goodcols <- grep("^(V\\d?|CL)$", allcols, value=TRUE, perl=TRUE)
+    
+    mypost <- mypost[goodcols]
+    myprior <- myprior[goodcols]
+    
+    for(col in goodcols) {
+      print(paste(col, "=", mypost[col], "population mean", myprior[col]))
+    }
+  })
 }
 
 

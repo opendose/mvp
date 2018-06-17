@@ -20,4 +20,4 @@ double ET2 = ETA(2);
 double ET3 = ETA(3);
 double ET4 = ETA(4);
 
-$CAPTURE DV ET1 ET2 ET3 ET4
+$CAPTURE DV ET1 ET2 ET3 ET4 CL V1 V2 Q
