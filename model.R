@@ -10,8 +10,7 @@ library(magrittr)
 #   assign(paste("mod.", noext, sep=""), mread(noext))
 # }
 
-mod.vanc_roberts2011 <- mread("vanc_roberts2011")
-mod.vanc_thomson2009 <- mread("vanc_thomson2009")
+mod.bpg_perscomm_hand2018 <- mread("bpg_perscomm_hand2018")
 
 
 # Note that dosing is not mentioned below. It is the caller's responsibility.

@@ -7,22 +7,21 @@ source("model.R")
 
 # Define UI for app that draws a histogram ----
 ui <- fluidPage(
-  titlePanel("Bayesian vancomycin"),
+  titlePanel("Bayesian BPG"),
   sidebarLayout(
     sidebarPanel(
-      radioButtons("modsel", "Model source", choices=c("mod.vanc_roberts2011", "mod.vanc_thomson2009")),
-      hr(),
-      numericInput("crcl", "Creatinine clearance (mL/min; urinary for Roberts, C-G for Thomson)", 90, 0, 200),
-      numericInput("tbw", "Total body weight (kg)", 70, 0, 200),
+      numericInput("bmi", "Body mass index (BMI; threshold=25)", 20, 0, 60),
+      numericInput("ffm", "Fat-free mass (kg)", 40, 0, 200),
       hr(),
       h2("Prior (blue)"),
-      textAreaInput("doses", "Doses ('hours mg', one per line)", value="0 1500", rows=3),
+      numericInput("dose", "Dose (mg)", 900, 0),
       h2("Posterior (red)"),
-      textAreaInput("tdm", "Drug levels ('hours mg/L', one per line)", value="12 15", rows=3)
+      textAreaInput("tdm", "Drug levels ('days ug/L', one per line)", value="30 20", rows=3)
     ),
     mainPanel(
       h2("output"),
       plotOutput("plot"),
+      plotOutput("plot2"),
       textOutput("report")
     )
   )
@@ -30,22 +29,18 @@ ui <- fluidPage(
 
 
 # Constants
-simduration <- 48
+simduration <- 30
 
 
 server <- function(input, output) {
-  Rbasemod <- reactive(get(input$modsel))
+  Rbasemod <- reactive(mod.bpg_perscomm_hand2018)
   
-  Rdoses <- reactive(
-    read.delim(text=input$doses, sep=" ", header=FALSE, col.names=c("t", "amt")) %>% mutate(rate=600)
-  )
-
   Rtdm <- reactive(
     read.delim(text=input$tdm, sep=" ", header=FALSE, col.names=c("t", "y"))
   )
   
   Rprior <- reactive(
-    Rbasemod() %>% param(TBW=input$tbw, CRCL=input$crcl) %>% ev(do.call("ev", Rdoses()))
+    Rbasemod() %>% param(FFM=input$ffm, BMI=input$bmi) %>% ev(t=0, amt=input$dose * 1000)
   )
   
   Rfit <- reactive(
@@ -58,14 +53,19 @@ server <- function(input, output) {
   
   output$plot <- renderPlot(
     ggplot() +
-      geom_line(data=Rprior() %>% remove.mod.uncertainty %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
-      geom_line(data=Rposterior() %>% remove.mod.uncertainty %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
+      geom_line(data=Rprior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
+      geom_line(data=Rposterior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
       geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
   )
   
+  output$plot2 <- renderPlot(
+    
+    Rposterior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% plot
+  )
+  
   output$report <- renderPrint({
-    mypost <- Rposterior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame %>% head(1)
-    myprior <- Rprior() %>% remove.mod.uncertainty %>% mrgsim %>% as.data.frame %>% head(1)
+    mypost <- Rposterior() %>% drop.re %>% mrgsim %>% as.data.frame %>% head(1)
+    myprior <- Rprior() %>% drop.re %>% mrgsim %>% as.data.frame %>% head(1)
     
     allcols <- colnames(mypost)
     goodcols <- grep("^(V\\d?|CL)$", allcols, value=TRUE, perl=TRUE)
