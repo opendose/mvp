@@ -6,7 +6,7 @@ $CMT ABS1 ABS2 CENT
 
 $MAIN
 double POPKEL = 1.32 * 24 * pow(FFM/70, -0.25); // times in days!!
-double POPV = 72.2 * FFM/70; // Fix this!!
+double POPV = 72.2 * FFM/56.1; // 56.1 = FFM of average (70kg) person
 double POPT12ABS = 0.455; // times in days
 double POPT12DIS = 8.88 * (BMI>25 ? 1.865 : 1);
 
