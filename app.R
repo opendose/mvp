@@ -16,7 +16,7 @@ ui <- fluidPage(
       h2("Prior (blue)"),
       numericInput("dose", "Dose (mg)", 900, 0),
       h2("Posterior (red)"),
-      textAreaInput("tdm", "Drug levels ('days ug/L', one per line)", value="30 20", rows=3)
+      textAreaInput("tdm", "Drug levels (format each line as 'days ug/L')", value="", rows=3)
     ),
     mainPanel(
       h2("output"),
@@ -51,12 +51,20 @@ server <- function(input, output) {
     Rprior() %>% hack.mod.for.fit(Rfit())
   )
   
-  output$plot <- renderPlot(
-    ggplot() +
+  Rmainplot <- reactive({
+    theplot <- ggplot() +
       geom_line(data=Rprior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
-      geom_line(data=Rposterior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior') +
       geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
-  )
+    
+    if(nrow(Rtdm()) > 0) {
+      theplot <- theplot +
+        geom_line(data=Rposterior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='red', label='Posterior')
+    }
+    
+    theplot
+  })
+  
+  output$plot <- renderPlot(Rmainplot())
   
   output$plot2 <- renderPlot(
     
