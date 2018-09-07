@@ -21,7 +21,10 @@ ui <- fluidPage(
     mainPanel(
       h2("output"),
       plotOutput("plot"),
-      plotOutput("plot2"),
+      fluidRow(
+        column(6, plotOutput("eta1")),
+        column(6, plotOutput("eta2"))
+      ),
       textOutput("report")
     )
   )
@@ -30,6 +33,34 @@ ui <- fluidPage(
 
 # Constants
 simduration <- 30
+
+
+extractp <- function(mod, prm) {
+  (mod %>% drop.re %>% update(end=0) %>% mrgsim %>% as.data.frame)[[prm]][1]
+}
+
+
+mkbell <- function(val, covar.name, mean, logstdev, covar.name2=NULL, mean2=NULL, logstdev2=NULL) {
+  bellfunc <- function(x){dnorm(x=log(x/mean)/logstdev)}
+  bellcurve <- stat_function(fun=bellfunc, geom="ribbon", mapping=aes(ymin=0, ymax=..y..), fill="grey")
+  theplot <- ggplot() + bellcurve
+
+  lside <- mean/exp(3.5*logstdev)
+  rside <- mean*exp(3.5*logstdev)
+  
+  val <- val %>% pmin(rside) %>% pmax(lside) # keep the eta within the visible region
+  theplot <- theplot + geom_vline(xintercept=val, color="black")
+  
+  if(is.null(covar.name2)) {
+    theplot <- theplot + scale_x_log10()
+  } else {
+    theplot <- theplot + scale_x_log10(sec.axis=sec_axis(~.*5, name=covar.name2))
+  }
+  
+  theplot <- theplot + aes(c(lside, rside)) + xlab(covar.name) + ylab("")
+  
+  theplot
+}
 
 
 server <- function(input, output) {
@@ -51,6 +82,8 @@ server <- function(input, output) {
     Rprior() %>% hack.mod.for.fit(Rfit())
   )
   
+  
+  
   Rmainplot <- reactive({
     theplot <- ggplot() +
       geom_line(data=Rprior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
@@ -66,10 +99,21 @@ server <- function(input, output) {
   
   output$plot <- renderPlot(Rmainplot())
   
-  output$plot2 <- renderPlot(
-    
-    Rposterior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% plot
-  )
+  Retasource <- reactive({if(nrow(Rtdm()) > 0) {Rposterior()} else {Rprior()}})
+  
+  output$eta1 <- renderPlot({
+    mean <- extractp(Rprior(), "INDV")
+    logstdev <- log(extractp(Rprior() %>% param(FORCEETA2=1), "INDV") / mean)
+    val <- extractp(Retasource(), "INDV")
+    mkbell(val, "Volume of distribution (L)", mean, logstdev)
+  })
+  
+  output$eta2 <- renderPlot({
+    mean <- extractp(Rprior(), "INDT12DIS")
+    logstdev <- log(extractp(Rprior() %>% param(FORCEETA1=1), "INDT12DIS") / mean)
+    val <- extractp(Retasource(), "INDT12DIS")
+    mkbell(val, "Distribution half-life (days)", mean, logstdev, "Other covariate")
+  })
   
   output$report <- renderPrint({
     mypost <- Rposterior() %>% drop.re %>% mrgsim %>% as.data.frame %>% head(1)

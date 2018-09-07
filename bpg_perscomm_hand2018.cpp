@@ -35,4 +35,4 @@ double DV = (CENT/INDV)*exp(EPS(1)); // observed, only fuzzes when we set sigma
 double ET1 = ETA(1);
 double ET2 = ETA(2);
 
-$CAPTURE DV ET1 ET2 POPKEL INDKEL
+$CAPTURE DV ET1 ET2 POPKEL POPV POPT12ABS POPT12DIS INDKEL INDV INDT12ABS INDT12DIS
