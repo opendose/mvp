@@ -81,10 +81,31 @@ server <- function(input, output) {
     Rprior() %>% hack.mod.for.fit(Rfit())
   )
   
+  Rpdribbon <- reactive({
+    df <- Retasource() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame %>% subset(DV >= 20)
+
+    if(nrow(df) >= 2) {
+      alltime <- df$time
+      l <- head(alltime, 1)
+      r <- tail(alltime, 1)
+      list(
+        geom_rect(aes(xmin=l, xmax=r, ymin=0, ymax=20), fill='darkolivegreen2'),
+        annotate(geom="text", x=(l+r)/2, y=10, label=sprintf('Days over 20ug/L = %.1f', r-l), color="black")
+      )
+    } else {
+      list()
+    }
+  })
   
   
   Rmainplot <- reactive({
-    theplot <- ggplot() +
+    theplot <- ggplot()
+      
+    for(el in Rpdribbon()) {
+      theplot <- theplot + el
+    }
+    
+    theplot <- theplot +
       geom_line(data=Rprior() %>% drop.re %>% update(end=simduration) %>% mrgsim %>% as.data.frame, aes(x=time, y=DV), color='blue', label='Prior') +
       geom_point(data=Rtdm(), aes(x=t, y=y), color='red', label='Drug levels')
     
