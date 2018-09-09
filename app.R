@@ -24,8 +24,7 @@ ui <- fluidPage(
       fluidRow(
         column(6, plotOutput("eta1")),
         column(6, plotOutput("eta2"))
-      ),
-      textOutput("report")
+      )
     )
   )
 )
@@ -113,21 +112,6 @@ server <- function(input, output) {
     logstdev <- log(extractp(Rprior() %>% param(FORCEETA1=1), "INDT12DIS") / mean)
     val <- extractp(Retasource(), "INDT12DIS")
     mkbell(val, "Distribution half-life (days)", mean, logstdev, "Other covariate")
-  })
-  
-  output$report <- renderPrint({
-    mypost <- Rposterior() %>% drop.re %>% mrgsim %>% as.data.frame %>% head(1)
-    myprior <- Rprior() %>% drop.re %>% mrgsim %>% as.data.frame %>% head(1)
-    
-    allcols <- colnames(mypost)
-    goodcols <- grep("^(V\\d?|CL)$", allcols, value=TRUE, perl=TRUE)
-    
-    mypost <- mypost[goodcols]
-    myprior <- myprior[goodcols]
-    
-    for(col in goodcols) {
-      print(paste(col, "=", mypost[col], "population mean", myprior[col]))
-    }
   })
 }
 
