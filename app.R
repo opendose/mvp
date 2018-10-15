@@ -71,7 +71,8 @@ ui <- fluidPage(
              conditionalPanel("input.password == 'opendose'",
                               checkboxInput("manualinfo", "Enter BMI and FFM manually"),
                               checkboxInput("showensemble", "Show Monte Carlo posterior estimates (slow)"),
-                              htmlOutput("report")
+                              htmlOutput("report"),
+                              plotOutput("popplot")
              )
     )
   )
@@ -197,10 +198,12 @@ server <- function(input, output) {
 
   output$plot <- renderPlot(Rplot())
 
+  output$popplot <- renderPlot(Rpopplot())
   output$report <- reactive({paste(c(
     sprintf("Calculated FFM = %.2f kg", Rffm()),
     sprintf("Calculated BMI = %.1f", if (input$manualinfo) -1 else input$optionalweight/(input$optionalheight/100)^2),
     sprintf("Categorical overweight (>25) = %s", if (Roverweight()) "yes" else "no"),
+    sprintf("ETA: %s", if (Rtdmactive()) Rebe() else "tdm not active"),
     ""
   ), collapse="<br />")})
 }
