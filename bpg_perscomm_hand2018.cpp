@@ -1,7 +1,7 @@
 $PROB
 Unpublished model
 
-$PARAM FFM=40, BMI=20
+$PARAM FFM=40, OVWT=0
 
 $CMT ABS1 ABS2 CENT
 
@@ -9,7 +9,7 @@ $MAIN
 double POPKEL    = 1.32 * 24 * pow(FFM/70, -0.25); // times in days!!
 double POPV      = 72.2 * FFM/56.1; // 56.1 = FFM of average (70kg) person
 double POPT12PRI = 0.455; // times in days
-double POPT12SEC = 8.88 * (BMI>25 ? 1.865 : 1);
+double POPT12SEC = 8.88 * (OVWT ? 1.865 : 1);
 
 double INDKEL    = POPKEL;
 double INDV      = POPV      * exp(ETA(2));
