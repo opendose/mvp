@@ -21,28 +21,6 @@ mod <- mread("bpg_perscomm_hand2018")
 mod <- opendose_modrewriteETA(mod) # recompiles the model with ETAn params
 mod <- mod %>% update(delta=1/24/6)
 
-# Define UI for app that draws a histogram ----
-# ui <- fluidPage(
-#   titlePanel("Bayesian BPG"),
-#   sidebarLayout(
-#     sidebarPanel(
-#       numericInput("bmi", "Body mass index (BMI; threshold=25)", 20, 0, 60),
-#       numericInput("ffm", "Fat-free mass (kg)", 40, 0, 200),
-#       hr(),
-#       numericInput("dose", "Dose (mg)", 900, 0),
-#       hr(),
-#       textAreaInput("tdm", "Drug levels (format each line as 'days ug/L')", value="", rows=3),
-#       hr(),
-#       checkboxInput("showensemble", "Ensemble of estimates from TDM")
-#     ),
-#     mainPanel(
-#       h2("output"),
-#       plotOutput("plot"),
-#       plotOutput("popPlot")
-#     )
-#   )
-# )
-
 ui <- fluidPage(
   title = "BPG",
   h1("Calculator: benzathine benzylpenicillin (BPG) in children"),
@@ -66,11 +44,11 @@ ui <- fluidPage(
     column(4,
            wellPanel(
              h4("Dose"),
-             numericInput("dose", "Intramuscular BPG (mg)", 450, 0, 3600, 450),
-             radioButtons("mxhistory", NULL, c("First dose"="first", "Steady state"="steady")),
-             conditionalPanel("input.mxhistory == 'steady'",
-                              numericInput("interval", "Time between last two doses (days)", 21, 7, 49, 7)
-             )
+             numericInput("dose", "Intramuscular BPG (mg)", 450, 0, 3600, 450)
+             # radioButtons("mxhistory", NULL, c("First dose"="first", "Steady state"="steady")),
+             # conditionalPanel("input.mxhistory == 'steady'",
+             #                  numericInput("interval", "Time between last two doses (days)", 21, 7, 49, 7)
+             # )
            )
     ),
     column(4,
