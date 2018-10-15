@@ -160,6 +160,9 @@ server <- function(input, output) {
       theplot <- theplot +
         geom_rect(aes(xmin=l, xmax=r, ymin=0, ymax=20), fill='darkolivegreen2') +
         annotate(geom="text", x=(l+r)/2, y=10, label=sprintf('Time over 20 µg/L = %.1f days', r-l), color="black")
+    } else {
+      theplot <- theplot +
+        annotate(geom="text", x=3, y=20, label='20 µg/L never exceeded', color="black")
     }
     
     theplot <- theplot + geom_line(data=bigtable, aes(x=time, y=F, linetype=method), size=1)
