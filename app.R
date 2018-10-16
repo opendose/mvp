@@ -47,7 +47,7 @@ ui <- fluidPage(
              numericInput("dose", "Intramuscular BPG (mg)", 450, 0, 3600, 450),
              radioButtons("mxhistory", NULL, c("First dose"="first", "Steady state"="steady")),
              conditionalPanel("input.mxhistory == 'steady'",
-                              numericInput("interval", "Time between last two doses (days)", 21, 7, 49, 7)
+                              numericInput("interval", "Time between doses (days)", 21, 7, 49, 7)
              )
            )
     ),
