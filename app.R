@@ -44,11 +44,11 @@ ui <- fluidPage(
     column(4,
            wellPanel(
              h4("Dose"),
-             numericInput("dose", "Intramuscular BPG (mg)", 450, 0, 3600, 450)
-             # radioButtons("mxhistory", NULL, c("First dose"="first", "Steady state"="steady")),
-             # conditionalPanel("input.mxhistory == 'steady'",
-             #                  numericInput("interval", "Time between last two doses (days)", 21, 7, 49, 7)
-             # )
+             numericInput("dose", "Intramuscular BPG (mg)", 450, 0, 3600, 450),
+             radioButtons("mxhistory", NULL, c("First dose"="first", "Steady state"="steady")),
+             conditionalPanel("input.mxhistory == 'steady'",
+                              numericInput("interval", "Time between last two doses (days)", 21, 7, 49, 7)
+             )
            )
     ),
     column(4,
@@ -107,7 +107,7 @@ server <- function(input, output) {
 
   Rtdm <- reactive(data.frame(time=input$tdmtime, Y=input$tdmlevel))
   Rtdmactive <- reactive(input$tdmactive)
-  Rpriormod <- reactive({Rbasemod() %>% param(FFM=Rffm(), OVWT=Roverweight()) %>% ev(amt=input$dose * 1000) %>% update(end=30)})
+  Rpriormod <- reactive({Rbasemod() %>% param(FFM=Rffm(), OVWT=Roverweight()) %>% ev(amt=input$dose * 1000, ss=if(input$mxhistory=="steady") 2 else 0, ii=input$interval) %>% update(end=30)})
   Rebe <- reactive({opendose_gamble(Rpriormod(), Rtdm()$time, Rtdm()$Y, methods="ebe")$ebe})
   Rensemble <- reactive({opendose_gamble(Rpriormod(), Rtdm()$time, Rtdm()$Y, methods=c("montecarlo_prior", "montecarlo_posterior"))})
 
